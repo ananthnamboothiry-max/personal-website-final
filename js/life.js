@@ -157,20 +157,6 @@ class Card {
       this.omega += (dx / d) * f * 0.18;
     }
 
-    // Card-to-card repulsion — keeps photos from fully stacking
-    cards.forEach(other => {
-      if (other === this) return;
-      const odx = cx - (other.x + CARD_W / 2);
-      const ody = cy - (other.y + CARD_H / 2);
-      const od2 = odx * odx + ody * ody;
-      if (od2 < CARD_REP_R * CARD_REP_R && od2 > 0.01) {
-        const od = Math.sqrt(od2);
-        const f  = ((CARD_REP_R - od) / CARD_REP_R) * CARD_REP_F;
-        this.vx += (odx / od) * f;
-        this.vy += (ody / od) * f;
-      }
-    });
-
     // Damping
     this.vx    *= DAMP;
     this.vy    *= DAMP;
