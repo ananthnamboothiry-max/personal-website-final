@@ -1,13 +1,49 @@
 {
   "sessions": [
     {
-      "date": "2025-08-15",
+      "date": "2026-02-27",
       "game": "NL Hold'em Tournament",
-      "venue": "Last Frontier Poker Room",
+      "venue": "Last Frontier",
       "buy_in": 100,
-      "cash_out": 750,
+      "cash_out": 450,
       "duration_hours": 2.0,
       "notes": "N/A"
-    }
+    },
+    {
+      "date": "2026-03-09",
+      "game": "Home Game",
+      "venue": "Crothers Hall",
+      "buy_in": 40,
+      "cash_out": 58.25,
+      "duration_hours": 3.0,
+      "notes": "N/A"
+    },
+     {
+      "date": "2026-03-03",
+      "game": "Home Tournaments",
+      "venue": "Online",
+      "buy_in": 30,
+      "cash_out": 45,
+      "duration_hours": 1.0,
+      "notes": "N/A"
+    },
+    {
+      "date": "2026-03-02",
+      "game": "Home Game",
+      "venue": "Crothers Hall",
+      "buy_in": 30,
+      "cash_out": 80.50,
+      "duration_hours": 3.0,
+      "notes": "N/A"
+    },
+    {
+      "date": "2026-02-27",
+      "game": "Home Game",
+      "venue": "Crothers Hall",
+      "buy_in": 30,
+      "cash_out": 9.80,
+      "duration_hours": 3.0,
+      "notes": "N/A"
+    },
   ]
 }
