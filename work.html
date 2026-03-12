@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Work — Ananth Namboothiry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="cursor-dot"></div>
+
+  <nav>
+    <a href="index.html" class="nav-name">Ananth Namboothiry</a>
+    <ul class="nav-links">
+      <li><a href="work.html" class="active">work</a></li>
+      <li><a href="thoughts.html">thoughts</a></li>
+      <li><a href="life.html">life</a></li>
+      <li><a href="poker.html">poker</a></li>
+    </ul>
+  </nav>
+
+  <div class="page">
+    <section class="section">
+      <div class="col fade-in">
+        <p class="label">Projects I've been cooking up</p>
+        <ul class="project-list">
+
+          <li class="project-item" data-tilt>
+            <p class="project-num">01</p>
+            <h2 class="project-title">Embedded TCN for Device-Level Arrhythmia Detection</h2>
+            <p class="project-desc">
+              Implemented and trained temporal convolutional networks in PyTorch for cardiac
+              time-series classification. Optimized for deployment on an Arduino Nano 33 BLE
+              (Cortex-M4F) under hardware memory constraints — detecting AF, VT, Brady, and
+              Pause arrhythmias at the edge.
+            </p>
+            <p class="project-award">2nd Place — Stanford BASES Pitch Competition</p>
+            <div class="project-tags">
+              <span class="tag">PyTorch</span>
+              <span class="tag">Arduino Nano BLE</span>
+              <span class="tag">Cortex-M4F</span>
+              <span class="tag">Edge ML</span>
+              <span class="tag">Time-Series</span>
+            </div>
+          </li>
+
+          <li class="project-item" data-tilt>
+            <p class="project-num">02</p>
+            <h2 class="project-title">Compute-Constrained Intelligence For Real Time Election Monitoring</h2>
+            <p class="project-desc">Shipping RNN/CNN, OCR, and NLP pipelines (Python, PyTorch, OpenCV) with Google Cloud Vision APIs to efficiently parse unstructured electoral reports and field notes. Developing time-series anomaly-detection models (ARIMA, statistical inference) to flag irregular voting patterns across multi-region real-time data (international elections). Pending integration into currently hard-coded Electronic Voting Machines (EVMs).</p>
+            <div class="project-tags">
+              <span class="tag">Python</span>
+              <span class="tag">PyTorch</span>
+              <span class="tag">OpenCV</span>
+              <span class="tag">Google Cloud Vision APIs</span>
+            </div>
+          </li>
+
+          <li class="project-item" data-tilt>
+            <p class="project-num">03</p>
+            <h2 class="project-title">International Financial Fraud Visualizations</h2>
+            <p class="project-desc">
+              Applied regression analysis on IHDS survey data to predict wage dispersion across
+              cultural and service-sector occupations; visualized results through income-distribution
+              histograms and Lorenz curves. Collaborated with Dr. Lalita Du Perron and Dr. Eren Tasar
+              on computerized simulations of financial fraud in India — high-dimensional transaction
+              data, graph-based clustering, quantifying propagation patterns.
+            </p>
+            <div class="project-tags">
+              <span class="tag">Regression</span>
+              <span class="tag">Graph Clustering</span>
+              <span class="tag">Lorenz Curves</span>
+              <span class="tag">IHDS Data</span>
+            </div>
+          </li>
+
+          <li class="project-item soon" data-tilt>
+            <p class="project-num">04</p>
+            <h2 class="project-title">Computer Architecture</h2>
+            <p class="project-desc">Something's cooking.</p>
+            <div class="project-tags">
+              <span class="tag">coming soon</span>
+            </div>
+          </li>
+
+          <li class="project-item soon" data-tilt>
+            <p class="project-num">05</p>
+            <h2 class="project-title">Codesign Agents</h2>
+            <p class="project-desc">Something's cooking.</p>
+            <div class="project-tags">
+              <span class="tag">coming soon</span>
+            </div>
+          </li>
+
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <!-- Konami overlay -->
+  <div id="konami-overlay" class="konami-overlay hidden">
+    <div class="konami-card">
+      <button class="konami-close" id="konami-close">✕</button>
+      <p class="konami-intro">nice hand, Ananth</p>
+      <div id="konami-hand" class="poker-hand"></div>
+      <p class="konami-hint">↑↑↓↓←→←→BA</p>
+    </div>
+  </div>
+
+  <script src="js/shared.js"></script>
+</body>
+</html>

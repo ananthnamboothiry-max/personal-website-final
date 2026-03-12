@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thoughts — Ananth Namboothiry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* Thoughts page: header sits above full-width corkboard */
+    .thoughts-header {
+      padding: 4rem 2rem 2.5rem;
+      max-width: var(--w);
+      margin: 0 auto;
+    }
+    .thoughts-hint {
+      font-family: var(--f-mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: -2.2rem;
+      margin-bottom: 2.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="cursor-dot"></div>
+
+  <nav>
+    <a href="index.html" class="nav-name">Ananth Namboothiry</a>
+    <ul class="nav-links">
+      <li><a href="work.html">work</a></li>
+      <li><a href="thoughts.html" class="active">thoughts</a></li>
+      <li><a href="life.html">life</a></li>
+      <li><a href="poker.html">poker</a></li>
+    </ul>
+  </nav>
+
+  <div class="page">
+
+    <div class="thoughts-header fade-in">
+      <p class="label">thoughts</p>
+      <p class="thoughts-hint">Im 90% sure these are updated, trust.</p>
+    </div>
+
+    <div id="corkboard">
+
+      <div class="sticky-note note-yellow" data-note-id="1">
+        <div class="pin"></div>
+        <p class="note-title">on self-interest vs. sacrifice</p>
+        <p>are we ever really acting for other people? like if i give something up for my family, it’s still because i wanted to do it. even soldiers — are they fighting selflessly, or because of money, responsibility, identity, whatever? at that point what even is sacrifice?</p>
+      </div>
+
+      <div class="sticky-note note-blue" data-note-id="2">
+        <div class="pin"></div>
+        <p class="note-title">currently reading</p>
+        <p><em>On Chip Networks</em> — Jerger, Krishna, Peh. If my classes had MESI protocols maybe our syllabi would be up to date.</p>
+      </div>
+      <div class="sticky-note note-pink" data-note-id="3">
+        <div class="pin"></div>
+        <p class="note-title">Scary Questions</p>
+        <p>How long until... <br>
+          - we end up on UBI <br>
+          - Elon puts a chip in our brains <br>
+          - physical AI takes over <br>
+          - a useless class is formalized <br>
+          - WWIII
+        </p>
+      </div>
+
+      <div class="sticky-note note-green" data-note-id="4">
+        <div class="pin"></div>
+        <p class="note-title">Food Recs?</p>
+        <p>Just hopped on Beli. Gonna be traveling to SF a lot more now, "need" to get some ratings in. If anyone has any spots they think I should hit up let me know ASAP.</p>
+      </div>
+
+      <div class="sticky-note note-yellow" data-note-id="5">
+        <div class="pin"></div>
+        <p class="note-title">Recent Movie Recs</p>
+        <p>
+          - No Other Choice <br>
+          - LA Confidential <br>
+          - Django Unchained <br>
+          - The Departed <br>
+          - Zindagi Na Milegi Dobara <br>
+          - The Prestige
+        </p>
+      </div>
+
+      <div class="sticky-note note-blue" data-note-id="6">
+        <div class="pin"></div>
+        <p class="note-title">a thought on hardware</p>
+        <p>Software abstracts everything away which is great until it isn't. The closer I get to the metal, the more I feel like I can understand why.</p>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Konami overlay -->
+  <div id="konami-overlay" class="konami-overlay hidden">
+    <div class="konami-card">
+      <button class="konami-close" id="konami-close">✕</button>
+      <p class="konami-intro">nice hand, Ananth</p>
+      <div id="konami-hand" class="poker-hand"></div>
+      <p class="konami-hint">↑↑↓↓←→←→BA</p>
+    </div>
+  </div>
+
+  <script src="js/shared.js"></script>
+</body>
+</html>

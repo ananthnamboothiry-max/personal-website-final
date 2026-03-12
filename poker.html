@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Poker — Ananth Namboothiry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="cursor-dot"></div>
+
+  <nav>
+    <a href="index.html" class="nav-name">Ananth Namboothiry</a>
+    <ul class="nav-links">
+      <li><a href="work.html">work</a></li>
+      <li><a href="thoughts.html">thoughts</a></li>
+      <li><a href="life.html">life</a></li>
+      <li><a href="poker.html" class="active">poker</a></li>
+    </ul>
+  </nav>
+
+  <div class="page">
+    <section class="section">
+      <div class="col fade-in">
+        <p class="label">poker log</p>
+        <p style="font-family:var(--f-mono);font-size:0.72rem;color:var(--muted);margin-top:-2.2rem;margin-bottom:2.5rem;">
+          On my soul I'll update this soon...
+        </p>
+
+        <!-- Stats -->
+        <div class="poker-stats" id="poker-stats">
+          <div class="stat-block">
+            <span class="stat-value" id="stat-sessions">—</span>
+            <span class="stat-label">sessions</span>
+          </div>
+          <div class="stat-block">
+            <span class="stat-value" id="stat-pnl">—</span>
+            <span class="stat-label">net P&amp;L</span>
+          </div>
+          <div class="stat-block">
+            <span class="stat-value" id="stat-hours">—</span>
+            <span class="stat-label">hours played</span>
+          </div>
+          <div class="stat-block">
+            <span class="stat-value" id="stat-roi">—</span>
+            <span class="stat-label">ROI</span>
+          </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="chart-wrap">
+          <canvas id="poker-chart"></canvas>
+          <div id="chart-tooltip" class="chart-tooltip"></div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrap">
+          <table id="poker-table">
+            <thead>
+              <tr>
+                <th data-col="date"           class="sortable">Date <span class="si">↕</span></th>
+                <th data-col="game"           class="sortable">Game <span class="si">↕</span></th>
+                <th data-col="venue"          class="sortable">Venue <span class="si">↕</span></th>
+                <th data-col="buy_in"         class="sortable">Buy-in <span class="si">↕</span></th>
+                <th data-col="cash_out"       class="sortable">Cash-out <span class="si">↕</span></th>
+                <th data-col="profit"         class="sortable">Profit <span class="si">↕</span></th>
+                <th data-col="duration_hours" class="sortable">Hours <span class="si">↕</span></th>
+              </tr>
+            </thead>
+            <tbody id="poker-tbody"></tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <!-- Konami overlay -->
+  <div id="konami-overlay" class="konami-overlay hidden">
+    <div class="konami-card">
+      <button class="konami-close" id="konami-close">✕</button>
+      <p class="konami-intro">nice hand, Ananth</p>
+      <div id="konami-hand" class="poker-hand"></div>
+      <p class="konami-hint">↑↑↓↓←→←→BA</p>
+    </div>
+  </div>
+
+  <script src="js/shared.js"></script>
+  <script src="js/poker.js"></script>
+</body>
+</html>
