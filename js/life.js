@@ -128,12 +128,12 @@ class Card {
     });
 
     // Set initial transform directly on el (this.el isn't assigned yet)
-    el.style.transform = `translate(${this.x}px,${this.y}px) rotate(${this.angle}deg)`;
+    el.style.transform = `translate3d(${this.x}px,${this.y}px,0) rotate(${this.angle}deg)`;
     return el;
   }
 
   _applyTransform() {
-    this.el.style.transform = `translate(${this.x}px,${this.y}px) rotate(${this.angle}deg)`;
+    this.el.style.transform = `translate3d(${this.x}px,${this.y}px,0) rotate(${this.angle}deg)`;
   }
 
   step(t) {
@@ -203,12 +203,39 @@ function closeLightbox() {
   lbOpen = false;
 }
 
+// ── Card-to-card repulsion (O(n²/2), run every 3rd frame) ─
+function applyCardRepulsions() {
+  for (let i = 0; i < cards.length; i++) {
+    const a = cards[i];
+    if (grabbed === a) continue;
+    const ax = a.x + CARD_W / 2;
+    const ay = a.y + CARD_H / 2;
+    for (let j = i + 1; j < cards.length; j++) {
+      const b = cards[j];
+      if (grabbed === b) continue;
+      const dx = ax - (b.x + CARD_W / 2);
+      const dy = ay - (b.y + CARD_H / 2);
+      const d2 = dx * dx + dy * dy;
+      if (d2 < CARD_REP_R * CARD_REP_R && d2 > 0.01) {
+        const d  = Math.sqrt(d2);
+        const f  = ((CARD_REP_R - d) / CARD_REP_R) * CARD_REP_F;
+        const fx = (dx / d) * f;
+        const fy = (dy / d) * f;
+        a.vx += fx; a.vy += fy;
+        b.vx -= fx; b.vy -= fy;
+      }
+    }
+  }
+}
+
 // ── RAF loop ──────────────────────────────────────────────
 let cards = [];
 
 function loop() {
   tick_n++;
   const t = tick_n * 0.016;
+  // Card-to-card repulsion is O(n²) — run every 3rd frame to stay smooth
+  if (tick_n % 3 === 0) applyCardRepulsions();
   cards.forEach(c => c.step(t));
   requestAnimationFrame(loop);
 }
