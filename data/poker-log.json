@@ -1,31 +1,13 @@
 {
   "sessions": [
     {
-      "date": "2025-10-12",
-      "game": "NL Hold'em 1/2",
-      "venue": "Stanford Card Room",
-      "buy_in": 200,
-      "cash_out": 310,
-      "duration_hours": 3.5,
-      "notes": "Flopped a set, got paid. Good read on table dynamics."
-    },
-    {
-      "date": "2025-11-03",
-      "game": "NL Hold'em 1/2",
-      "venue": "Home Game",
+      "date": "2025-08-15",
+      "game": "NL Hold'em Tournament",
+      "venue": "Last Frontier Poker Room",
       "buy_in": 100,
-      "cash_out": 60,
+      "cash_out": 750,
       "duration_hours": 2.0,
-      "notes": "Card dead all night. Lost a flip AK vs QQ."
-    },
-    {
-      "date": "2025-12-01",
-      "game": "NL Hold'em 1/3",
-      "venue": "Bay 101",
-      "buy_in": 300,
-      "cash_out": 480,
-      "duration_hours": 5.0,
-      "notes": "Ran well. Bluffed the river twice successfully."
+      "notes": "N/A"
     }
   ]
 }
