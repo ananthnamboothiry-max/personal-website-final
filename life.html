@@ -4,79 +4,89 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Life — Ananth Namboothiry</title>
+  <meta name="description" content="A physics playground of photos — grab, fling, and open them." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='4' fill='%231A1915'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
   <style>
-    /* ── Life page overrides: dark full-viewport canvas ── */
-    body { background: #0f0f0f; }
+    /* ── Life: full-viewport physics stage ── */
+    body { overflow: hidden; }
 
     #life-stage {
       position: fixed;
-      top: 52px; left: 0; right: 0; bottom: 0;
+      top: var(--nav-h); left: 0; right: 0; bottom: 0;
       overflow: hidden;
       contain: layout style;
+      touch-action: none;
+      /* keep card z-indexes inside the stage so they never cover the UI */
+      isolation: isolate;
     }
 
-    /* hint overlay */
     #life-hint {
       position: absolute;
-      bottom: 2rem; left: 50%;
+      bottom: 1.8rem; left: 50%;
       transform: translateX(-50%);
       font-family: var(--f-mono);
-      font-size: 0.68rem;
+      font-size: 0.62rem;
       letter-spacing: 0.16em;
-      color: rgba(255,255,255,0.22);
+      color: var(--ink-2);
+      background: rgba(245, 244, 240, 0.88);
+      padding: 0.4rem 0.85rem;
       pointer-events: none;
       transition: opacity 1.2s ease;
       white-space: nowrap;
+      max-width: calc(100vw - 2rem);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      z-index: 600;
     }
     #life-hint.gone { opacity: 0; }
 
-    /* scatter button */
     #scatter-btn {
       position: fixed;
-      bottom: 1.8rem; right: 2rem;
+      bottom: 1.8rem; right: 1.8rem;
       font-family: var(--f-mono);
-      font-size: 0.72rem;
-      letter-spacing: 0.12em;
-      color: rgba(255,255,255,0.35);
-      background: none;
-      border: 1px solid rgba(255,255,255,0.12);
-      padding: 0.4rem 1rem;
-      cursor: none;
-      transition: color 0.2s, border-color 0.2s;
-      z-index: 500;
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      color: var(--ink-2);
+      background: rgba(245, 244, 240, 0.88);
+      border: 1px solid #C9C6BA;
+      padding: 0.6rem 1rem;
+      cursor: pointer;
+      transition: color 0.18s ease, border-color 0.18s ease;
+      z-index: 700;
     }
-    #scatter-btn:hover {
-      color: rgba(255,255,255,0.8);
-      border-color: rgba(255,255,255,0.35);
-    }
+    #scatter-btn:hover { color: var(--ink); border-color: var(--ink-2); }
 
     /* photo cards */
     .photo-card {
       position: absolute;
       left: 0; top: 0;
       width: 155px;
-      background: #fff;
-      padding: 0.55rem 0.55rem 2.6rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      background: #FFFFFF;
+      padding: 0.55rem 0.55rem 2.4rem;
+      box-shadow: 0 2px 16px rgba(26, 25, 21, 0.13);
       will-change: transform;
       user-select: none;
+      -webkit-user-select: none;
+      cursor: grab;
       transition: box-shadow 0.15s;
     }
     .photo-card.grabbed {
-      box-shadow: 0 16px 48px rgba(0,0,0,0.8);
+      cursor: grabbing;
+      box-shadow: 0 14px 40px rgba(26, 25, 21, 0.28);
+    }
+    .photo-card:focus-visible {
+      outline: 2px solid var(--ink-2);
+      outline-offset: 2px;
     }
     .pc-img {
       width: 100%;
       aspect-ratio: 1;
-      background: #e8e8e5;
+      background: #EFEEE9;
       overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
     .pc-img img {
       width: 100%; height: 100%;
@@ -84,31 +94,26 @@
       display: block;
       pointer-events: none;
     }
-    .pc-ph {
-      font-size: 1.8rem;
-      color: #bbb;
-      display: none;
-      width: 100%; height: 100%;
-      align-items: center;
-      justify-content: center;
-    }
     .pc-cap {
-      font-family: var(--f-hand);
-      font-size: 0.88rem;
-      color: #555;
+      font-family: var(--f-mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.04em;
+      color: var(--ink-3);
       text-align: center;
-      margin-top: 0.4rem;
-      line-height: 1.3;
+      line-height: 1.4;
       position: absolute;
-      bottom: 0.4rem;
+      bottom: 0.55rem;
       left: 0.5rem; right: 0.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* lightbox */
     #lightbox {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.92);
+      background: rgba(245, 244, 240, 0.94);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -118,82 +123,71 @@
     }
     #lightbox.hidden { display: none; }
     #lb-img {
-      max-width: min(90vw, 800px);
-      max-height: 80vh;
+      max-width: min(88vw, 820px);
+      max-height: 78vh;
       object-fit: contain;
-      box-shadow: 0 8px 48px rgba(0,0,0,0.8);
+      box-shadow: 0 24px 80px rgba(26, 25, 21, 0.25);
       display: block;
+      background: #EFEEE9;
     }
     #lb-cap {
-      font-family: var(--f-hand);
-      font-size: 1.1rem;
-      color: rgba(255,255,255,0.55);
-      margin-top: 1rem;
+      font-family: var(--f-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.08em;
+      color: var(--ink-2);
+      margin-top: 1.1rem;
       text-align: center;
     }
     #lb-close {
       position: fixed;
-      top: 1.2rem; right: 1.5rem;
+      top: 0.5rem; right: 0.6rem;
       background: none; border: none;
-      color: rgba(255,255,255,0.35);
-      font-size: 1.2rem;
-      cursor: none;
+      color: var(--ink-2);
+      font-size: 1rem;
+      padding: 0.9rem;
+      cursor: pointer;
       transition: color 0.15s;
+      z-index: 9001;
     }
-    #lb-close:hover { color: white; }
+    #lb-close:hover { color: var(--ink); }
     #lb-nav {
       position: fixed;
-      bottom: 1.5rem;
+      bottom: 1.4rem;
       font-family: var(--f-mono);
-      font-size: 0.7rem;
-      letter-spacing: 0.15em;
-      color: rgba(255,255,255,0.25);
+      font-size: 0.58rem;
+      letter-spacing: 0.14em;
+      color: var(--ink-3);
     }
-
-    /* nav: slight transparency over the dark stage */
-    nav { background: rgba(15,15,15,0.85); backdrop-filter: blur(8px); }
   </style>
 </head>
 <body>
-  <div id="cursor-dot" style="background:#fff;mix-blend-mode:difference;"></div>
 
   <nav>
-    <a href="index.html" class="nav-name">Ananth Namboothiry</a>
-    <ul class="nav-links">
-      <li><a href="work.html">work</a></li>
-      <li><a href="thoughts.html">thoughts</a></li>
-      <li><a href="life.html" class="active">life</a></li>
-      <li><a href="poker.html">poker</a></li>
-    </ul>
+    <div class="wrap wrap--wide nav-inner">
+      <ul class="nav-links">
+        <li><a href="index.html">about</a></li>
+        <li><a href="index.html#experience">experience</a></li>
+        <li><a href="life.html" class="active">life</a></li>
+        <li><a href="poker.html">poker</a></li>
+      </ul>
+    </div>
   </nav>
 
   <!-- Physics stage -->
-  <div id="life-stage">
+  <main id="life-stage" aria-label="Photo playground">
     <div id="life-hint">move your mouse &nbsp;·&nbsp; grab &amp; fling &nbsp;·&nbsp; click to open</div>
-  </div>
+  </main>
 
-  <!-- Scatter -->
   <button id="scatter-btn">scatter ↻</button>
 
   <!-- Lightbox -->
-  <div id="lightbox" class="hidden">
-    <button id="lb-close">✕</button>
+  <div id="lightbox" class="hidden" role="dialog" aria-modal="true" aria-label="Photo viewer">
+    <button id="lb-close" aria-label="Close">✕</button>
     <img id="lb-img" src="" alt="" />
     <p id="lb-cap"></p>
-    <p id="lb-nav">ESC or click outside to close</p>
+    <p id="lb-nav">esc or click outside to close</p>
   </div>
 
-  <!-- Konami overlay -->
-  <div id="konami-overlay" class="konami-overlay hidden">
-    <div class="konami-card">
-      <button class="konami-close" id="konami-close">✕</button>
-      <p class="konami-intro">nice hand, Ananth</p>
-      <div id="konami-hand" class="poker-hand"></div>
-      <p class="konami-hint">↑↑↓↓←→←→BA</p>
-    </div>
-  </div>
-
-  <script src="js/shared.js"></script>
   <script src="js/life.js"></script>
 </body>
 </html>

@@ -15,17 +15,39 @@
   }
   if (!sessions.length) return;
 
-  /* ── Stats ─────────────────────────────────────────────── */
-  let totalIn = 0, totalOut = 0, totalHours = 0;
-  sessions.forEach(s => {
-    totalIn    += s.buy_in;
-    totalOut   += s.cash_out;
-    totalHours += s.duration_hours;
-  });
-  const netPL = totalOut - totalIn;
-  const roi   = totalIn > 0 ? ((netPL / totalIn) * 100).toFixed(1) : 0;
+  // Chart palette (matches css custom properties)
+  const C = {
+    grid:    'rgba(26, 25, 21, 0.07)',
+    zero:    'rgba(26, 25, 21, 0.22)',
+    tick:    '#6E6B5C',
+    pos:     '#3D7A50',
+    posFill: 'rgba(61, 122, 80, 0.08)',
+    neg:     '#B04A38',
+    negFill: 'rgba(176, 74, 56, 0.08)',
+  };
+  const MONO = `10px 'IBM Plex Mono', monospace`;
 
-  const fmt = n => (n >= 0 ? '+$' : '-$') + Math.abs(n).toLocaleString();
+  const esc = s => String(s).replace(/[&<>"']/g,
+    c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /* ── Stats ─────────────────────────────────────────────── */
+  let totalIn = 0, totalOut = 0;
+  sessions.forEach(s => {
+    totalIn  += s.buy_in;
+    totalOut += s.cash_out;
+  });
+  const netPL = Math.round((totalOut - totalIn) * 100) / 100;
+  const roi   = totalIn > 0 ? Math.round((netPL / totalIn) * 1000) / 10 : 0;
+
+  const dollars = n => '$' + n.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  // Round to cents BEFORE choosing the sign so -0.004 doesn't show as -$0.00
+  const money = n => {
+    const r = Math.round(n * 100) / 100;
+    return (r >= 0 ? '+' : '-') + dollars(Math.abs(r));
+  };
 
   const set = (id, text, pos) => {
     const el = document.getElementById(id);
@@ -35,11 +57,10 @@
   };
 
   document.getElementById('stat-sessions').textContent = sessions.length;
-  document.getElementById('stat-hours').textContent    = totalHours.toFixed(1) + 'h';
-  set('stat-pnl', fmt(netPL), netPL >= 0);
-  set('stat-roi', (roi >= 0 ? '+' : '') + roi + '%', roi >= 0);
+  set('stat-pnl', money(netPL), netPL >= 0);
+  set('stat-roi', (roi > 0 ? '+' : '') + roi.toFixed(1) + '%', roi >= 0);
 
-  /* ── Cumulative P&L ────────────────────────────────────── */
+  /* ── Cumulative P&L (sessions in log order, evenly spaced) ─ */
   let running = 0;
   const cumPL = sessions.map(s => (running += s.cash_out - s.buy_in));
 
@@ -48,119 +69,163 @@
   const tooltip = document.getElementById('chart-tooltip');
   if (!canvas || !canvas.getContext) return;
 
-  const dpr = window.devicePixelRatio || 1;
-  const W   = canvas.parentElement.clientWidth - 32;
-  const H   = 200;
-  canvas.width  = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width  = W + 'px';
-  canvas.style.height = H + 'px';
-
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-
-  const PAD = { top: 16, right: 16, bottom: 32, left: 52 };
-  const cW  = W - PAD.left - PAD.right;
-  const cH  = H - PAD.top  - PAD.bottom;
-
-  const minV  = Math.min(0, ...cumPL);
-  const maxV  = Math.max(0, ...cumPL);
-  const range = maxV - minV || 100;
-
-  const toX = i => PAD.left + (i / Math.max(cumPL.length - 1, 1)) * cW;
-  const toY = v => PAD.top  + (1 - (v - minV) / range) * cH;
-  const zeroY = toY(0);
-
-  /* Grid */
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-  ctx.lineWidth = 1;
-  [0, 1, 2, 3, 4].forEach(t => {
-    const v = minV + (range / 4) * t;
-    const y = toY(v);
-    ctx.beginPath();
-    ctx.moveTo(PAD.left, y);
-    ctx.lineTo(PAD.left + cW, y);
-    ctx.stroke();
-    ctx.fillStyle = '#555';
-    ctx.font = `10px 'JetBrains Mono', monospace`;
-    ctx.textAlign = 'right';
-    ctx.fillText((v >= 0 ? '+$' : '-$') + Math.abs(Math.round(v)), PAD.left - 6, y + 4);
-  });
-
-  /* Zero line */
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-  ctx.setLineDash([3, 3]);
-  ctx.beginPath();
-  ctx.moveTo(PAD.left, zeroY);
-  ctx.lineTo(PAD.left + cW, zeroY);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  /* Area fill */
-  if (cumPL.length >= 2) {
-    ctx.beginPath();
-    ctx.moveTo(toX(0), zeroY);
-    cumPL.forEach((v, i) => ctx.lineTo(toX(i), toY(v)));
-    ctx.lineTo(toX(cumPL.length - 1), zeroY);
-    ctx.closePath();
-    const lastVal = cumPL[cumPL.length - 1];
-    ctx.fillStyle = lastVal >= 0 ? 'rgba(22,163,74,0.1)' : 'rgba(220,38,38,0.1)';
-    ctx.fill();
+  // Round the axis to human steps (1/2/2.5/5 × 10^n)
+  function niceStep(range) {
+    const target = range / 4.5;
+    const p = Math.pow(10, Math.floor(Math.log10(target)));
+    for (const m of [1, 2, 2.5, 5, 10]) if (target <= m * p) return m * p;
+    return 10 * p;
   }
 
-  /* Line */
-  if (cumPL.length >= 2) {
-    const lastVal = cumPL[cumPL.length - 1];
+  let toX, toY, chartW;
+
+  function draw() {
+    tooltip.style.display = 'none';   // stale coordinates after a redraw
+
+    const dpr = window.devicePixelRatio || 1;
+    const W   = canvas.parentElement.clientWidth;
+    const H   = 190;
+    chartW = W;
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    const dataMin = Math.min(0, ...cumPL);
+    const dataMax = Math.max(0, ...cumPL);
+    const step    = niceStep((dataMax - dataMin) || 100);
+    let axisMin   = Math.floor(dataMin / step) * step;
+    let axisMax   = Math.ceil(dataMax / step) * step;
+    if (axisMax === dataMax) axisMax += step;             // headroom
+    if (axisMin === dataMin && dataMin < 0) axisMin -= step;
+
+    const ticks = [];
+    for (let v = axisMin; v <= axisMax + 1e-9; v += step) ticks.push(v);
+
+    // Gutter sized from the widest tick label so the chart block starts at
+    // the page's left column edge
+    ctx.font = MONO;
+    const labelFor = v => v === 0 ? '$0'
+      : (v > 0 ? '+$' : '-$') + Math.abs(Math.round(v)).toLocaleString();
+    const gutter = Math.ceil(Math.max(...ticks.map(v => ctx.measureText(labelFor(v)).width)));
+    const PAD = { top: 14, right: 8, bottom: 30, left: gutter + 12 };
+
+    const cW = W - PAD.left - PAD.right;
+    const cH = H - PAD.top  - PAD.bottom;
+
+    toX = i => PAD.left + (i / Math.max(cumPL.length - 1, 1)) * cW;
+    toY = v => PAD.top  + (1 - (v - axisMin) / (axisMax - axisMin)) * cH;
+    const zeroY = toY(0);
+
+    /* Grid + y labels (right-aligned against each other, flush left edge) */
+    ctx.lineWidth = 1;
+    ticks.forEach(v => {
+      const y = toY(v);
+      ctx.strokeStyle = C.grid;
+      ctx.beginPath();
+      ctx.moveTo(PAD.left, y);
+      ctx.lineTo(PAD.left + cW, y);
+      ctx.stroke();
+      ctx.fillStyle = C.tick;
+      ctx.textAlign = 'right';
+      ctx.fillText(labelFor(v), gutter, y + 3);
+    });
+
+    /* Zero line */
+    ctx.strokeStyle = C.zero;
+    ctx.setLineDash([3, 3]);
     ctx.beginPath();
-    ctx.moveTo(toX(0), toY(cumPL[0]));
-    cumPL.forEach((v, i) => { if (i > 0) ctx.lineTo(toX(i), toY(v)); });
-    ctx.strokeStyle = lastVal >= 0 ? '#16A34A' : '#DC2626';
-    ctx.lineWidth = 1.5;
-    ctx.lineJoin = 'round';
+    ctx.moveTo(PAD.left, zeroY);
+    ctx.lineTo(PAD.left + cW, zeroY);
     ctx.stroke();
+    ctx.setLineDash([]);
+
+    const lastVal = cumPL[cumPL.length - 1];
+    const up = lastVal >= 0;
+
+    /* Area fill */
+    if (cumPL.length >= 2) {
+      ctx.beginPath();
+      ctx.moveTo(toX(0), zeroY);
+      cumPL.forEach((v, i) => ctx.lineTo(toX(i), toY(v)));
+      ctx.lineTo(toX(cumPL.length - 1), zeroY);
+      ctx.closePath();
+      ctx.fillStyle = up ? C.posFill : C.negFill;
+      ctx.fill();
+    }
+
+    /* Line */
+    if (cumPL.length >= 2) {
+      ctx.beginPath();
+      ctx.moveTo(toX(0), toY(cumPL[0]));
+      cumPL.forEach((v, i) => { if (i > 0) ctx.lineTo(toX(i), toY(v)); });
+      ctx.strokeStyle = up ? C.pos : C.neg;
+      ctx.lineWidth = 1.5;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    }
+
+    /* Dots (shrink once the log gets long) */
+    const dotR = cumPL.length > 30 ? 1.5 : 2.5;
+    cumPL.forEach((v, i) => {
+      ctx.beginPath();
+      ctx.arc(toX(i), toY(v), dotR, 0, Math.PI * 2);
+      ctx.fillStyle = v >= 0 ? C.pos : C.neg;
+      ctx.fill();
+    });
+
+    /* X labels — thin them out so they never collide */
+    ctx.fillStyle = C.tick;
+    ctx.textAlign = 'center';
+    const slots  = Math.max(1, Math.floor(cW / 34));
+    const stride = Math.max(1, Math.ceil(cumPL.length / slots));
+    cumPL.forEach((_, i) => {
+      const isLast = i === cumPL.length - 1;
+      if (i % stride !== 0 && !isLast) return;
+      if (!isLast && cumPL.length - 1 - i < stride * 0.6) return; // don't crowd the last label
+      ctx.fillText('S' + (i + 1), toX(i), H - PAD.bottom + 16);
+    });
   }
 
-  /* Dots */
-  cumPL.forEach((v, i) => {
-    ctx.beginPath();
-    ctx.arc(toX(i), toY(v), 3, 0, Math.PI * 2);
-    ctx.fillStyle = v >= 0 ? '#16A34A' : '#DC2626';
-    ctx.fill();
-  });
+  draw();
+  window.addEventListener('resize', draw);
 
-  /* X labels */
-  ctx.fillStyle = '#888';
-  ctx.font = `10px 'JetBrains Mono', monospace`;
-  ctx.textAlign = 'center';
-  cumPL.forEach((_, i) => {
-    ctx.fillText('S' + (i + 1), toX(i), H - PAD.bottom + 16);
-  });
-
-  /* Tooltip */
-  canvas.addEventListener('mousemove', e => {
+  /* Tooltip (pointer events so touch taps work too) */
+  function showTooltip(e) {
     const rect = canvas.getBoundingClientRect();
-    const mx   = e.clientX - rect.left;
+    const px   = e.clientX - rect.left;
     let nearest = 0, minDist = Infinity;
     cumPL.forEach((_, i) => {
-      const d = Math.abs(mx - toX(i));
+      const d = Math.abs(px - toX(i));
       if (d < minDist) { minDist = d; nearest = i; }
     });
     if (minDist < 40) {
       const s   = sessions[nearest];
       const pnl = s.cash_out - s.buy_in;
-      tooltip.style.display = 'block';
-      tooltip.style.left = (toX(nearest) + 8) + 'px';
-      tooltip.style.top  = (toY(cumPL[nearest]) - 32) + 'px';
       tooltip.textContent =
-        `S${nearest + 1} · ${s.date} · ${pnl >= 0 ? '+$' : '-$'}${Math.abs(pnl)} · cumulative ${cumPL[nearest] >= 0 ? '+$' : '-$'}${Math.abs(cumPL[nearest])}`;
+        `${s.game} · ${money(pnl)} · total ${money(cumPL[nearest])}`;
+      tooltip.style.display = 'block';
+      // Clamp inside the chart so the rightmost points don't overflow
+      const tw = tooltip.offsetWidth;
+      tooltip.style.left = Math.max(0, Math.min(toX(nearest) + 8, chartW - tw - 2)) + 'px';
+      tooltip.style.top  = Math.max(0, toY(cumPL[nearest]) - 34) + 'px';
     } else {
       tooltip.style.display = 'none';
     }
+  }
+  canvas.addEventListener('pointermove', showTooltip);
+  canvas.addEventListener('pointerdown', showTooltip);
+  canvas.addEventListener('pointerleave', () => { tooltip.style.display = 'none'; });
+  canvas.addEventListener('pointerup', e => {
+    if (e.pointerType !== 'mouse') setTimeout(() => { tooltip.style.display = 'none'; }, 1600);
   });
-  canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
 
   /* ── Table ─────────────────────────────────────────────── */
-  let sortCol = 'date', sortAsc = true;
+  let sortCol = null, sortAsc = false;   // default: latest session first
   const tbody = document.getElementById('poker-tbody');
 
   function render(data) {
@@ -170,19 +235,18 @@
       const p  = s.cash_out - s.buy_in;
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${s.date}</td>
-        <td>${s.game}</td>
-        <td>${s.venue}</td>
-        <td>$${s.buy_in.toLocaleString()}</td>
-        <td>$${s.cash_out.toLocaleString()}</td>
-        <td class="${p >= 0 ? 'td-pos' : 'td-neg'}">${p >= 0 ? '+$' : '-$'}${Math.abs(p).toLocaleString()}</td>
-        <td>${s.duration_hours}h</td>
+        <td>${esc(s.game)}</td>
+        <td>${esc(s.venue)}</td>
+        <td class="td-num">${dollars(s.buy_in)}</td>
+        <td class="td-num">${dollars(s.cash_out)}</td>
+        <td class="td-num ${p >= 0 ? 'td-pos' : 'td-neg'}">${money(p)}</td>
       `;
       tbody.appendChild(tr);
     });
   }
 
   function sorted() {
+    if (!sortCol) return [...sessions].reverse();
     return [...sessions].sort((a, b) => {
       const va = sortCol === 'profit' ? a.cash_out - a.buy_in : a[sortCol];
       const vb = sortCol === 'profit' ? b.cash_out - b.buy_in : b[sortCol];
@@ -191,14 +255,25 @@
     });
   }
 
+  // Show the active sort column: ↑/↓ on it, quiet ↕ on the rest
+  function markSort() {
+    document.querySelectorAll('#poker-table th.sortable').forEach(h => {
+      const active = h.dataset.col === sortCol;
+      h.classList.toggle('sort-asc',  active && sortAsc);
+      h.classList.toggle('sort-desc', active && !sortAsc);
+      const si = h.querySelector('.si');
+      if (si) si.textContent = active ? (sortAsc ? '↑' : '↓') : '↕';
+    });
+  }
+
   render(sorted());
+  markSort();
 
   document.querySelectorAll('#poker-table th.sortable').forEach(th => {
     th.addEventListener('click', () => {
       sortAsc = sortCol === th.dataset.col ? !sortAsc : true;
       sortCol = th.dataset.col;
-      document.querySelectorAll('#poker-table th').forEach(h => h.classList.remove('sort-asc','sort-desc'));
-      th.classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+      markSort();
       render(sorted());
     });
   });
