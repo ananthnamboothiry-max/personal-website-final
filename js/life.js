@@ -80,7 +80,9 @@ const DAMP_ANG    = 0.90;  // angular damping
 const REPEL_F     = 5.5;   // cursor repulsion force strength
 const DRIFT_A     = 0.009; // Brownian drift amplitude
 const WALL_RES    = -0.38; // wall restitution (negative = reverse)
+const WALL_SNAP_V = 1.4;   // below this speed walls absorb instead of bounce
 const CARD_REP_F  = 1.4;   // card-to-card repulsion force
+const REP_MAX     = 0.4;   // cap on net crowd-pressure impulse per frame
 
 // Sized at init from the stage so phones get smaller cards
 let CARD_W = BASE_CARD_W, CARD_H = 200, REPEL_R = 190, CARD_REP_R = 175;
@@ -214,11 +216,26 @@ class Card {
     this.y     += this.vy * dt;
     this.angle += this.omega * dt;
 
-    // Wall collision
-    if (this.x < 0)               { this.x = 0;               this.vx *= WALL_RES; this.omega *= 0.6; }
-    if (this.y < 0)               { this.y = 0;               this.vy *= WALL_RES; }
-    if (this.x > stageW - CARD_W) { this.x = stageW - CARD_W; this.vx *= WALL_RES; this.omega *= 0.6; }
-    if (this.y > stageH - CARD_H) { this.y = stageH - CARD_H; this.vy *= WALL_RES; }
+    // Wall collision: fast hits bounce, slow squeezes are absorbed —
+    // otherwise crowd pressure + bounce sets up a permanent vibration
+    if (this.x < 0) {
+      this.x = 0;
+      this.vx = this.vx < -WALL_SNAP_V ? this.vx * WALL_RES : 0;
+      this.omega *= 0.6;
+    }
+    if (this.y < 0) {
+      this.y = 0;
+      this.vy = this.vy < -WALL_SNAP_V ? this.vy * WALL_RES : 0;
+    }
+    if (this.x > stageW - CARD_W) {
+      this.x = stageW - CARD_W;
+      this.vx = this.vx > WALL_SNAP_V ? this.vx * WALL_RES : 0;
+      this.omega *= 0.6;
+    }
+    if (this.y > stageH - CARD_H) {
+      this.y = stageH - CARD_H;
+      this.vy = this.vy > WALL_SNAP_V ? this.vy * WALL_RES : 0;
+    }
 
     this._applyTransform();
   }
@@ -280,14 +297,26 @@ function closeLightbox() {
   lbReturnFocus = null;
 }
 
-// ── Card-to-card repulsion (O(n²/2), run every 3rd frame) ─
+// ── Card-to-card repulsion (O(n²/2), every frame, capped) ─
+// Forces accumulate into buffers first so each card's NET crowd pressure
+// can be capped — uncapped, a card squeezed by 5–6 neighbors receives
+// large direction-flipping impulses that read as vibration.
+let fxBuf = null, fyBuf = null;
+
 function applyCardRepulsions(dt) {
-  for (let i = 0; i < cards.length; i++) {
+  const n = cards.length;
+  if (!fxBuf || fxBuf.length !== n) {
+    fxBuf = new Float64Array(n);
+    fyBuf = new Float64Array(n);
+  }
+  fxBuf.fill(0); fyBuf.fill(0);
+
+  for (let i = 0; i < n; i++) {
     const a = cards[i];
     if (grabbed === a) continue;
     const ax = a.x + CARD_W / 2;
     const ay = a.y + CARD_H / 2;
-    for (let j = i + 1; j < cards.length; j++) {
+    for (let j = i + 1; j < n; j++) {
       const b = cards[j];
       if (grabbed === b) continue;
       const dx = ax - (b.x + CARD_W / 2);
@@ -295,13 +324,22 @@ function applyCardRepulsions(dt) {
       const d2 = dx * dx + dy * dy;
       if (d2 < CARD_REP_R * CARD_REP_R && d2 > 0.01) {
         const d  = Math.sqrt(d2);
-        const f  = ((CARD_REP_R - d) / CARD_REP_R) * CARD_REP_F * dt;
+        const f  = ((CARD_REP_R - d) / CARD_REP_R) * CARD_REP_F;
         const fx = (dx / d) * f;
         const fy = (dy / d) * f;
-        a.vx += fx; a.vy += fy;
-        b.vx -= fx; b.vy -= fy;
+        fxBuf[i] += fx; fyBuf[i] += fy;
+        fxBuf[j] -= fx; fyBuf[j] -= fy;
       }
     }
+  }
+
+  const cap = REP_MAX * dt;
+  for (let i = 0; i < n; i++) {
+    let fx = fxBuf[i] * dt, fy = fyBuf[i] * dt;
+    const mag = Math.hypot(fx, fy);
+    if (mag > cap) { fx *= cap / mag; fy *= cap / mag; }
+    cards[i].vx += fx;
+    cards[i].vy += fy;
   }
 }
 
@@ -309,23 +347,16 @@ function applyCardRepulsions(dt) {
 let cards = [];
 let lastNow = 0;
 let simT = 0;
-let tick_n = 0;
-let repAccum = 0;
 
 function loop(now) {
   const dtMs = lastNow ? Math.min(Math.max(now - lastNow, 2), 50) : 16.7;
   lastNow = now;
   const dt = dtMs / 16.667;   // 1.0 at 60fps
   simT += dtMs / 1000;
-  tick_n++;
 
-  // Card-to-card repulsion is O(n²) — run every 3rd frame, scaled by the
-  // accumulated dt so lower/higher frame rates get the same total impulse
-  repAccum += dt;
-  if (!REDUCED && tick_n % 3 === 0) {
-    applyCardRepulsions(repAccum);
-    repAccum = 0;
-  }
+  // Every frame (a few hundred pairs is cheap) — pulsing it on every
+  // 3rd frame delivered visible 20Hz kicks when cards were crowded
+  if (!REDUCED) applyCardRepulsions(dt);
 
   cards.forEach(c => c.step(simT, dt));
   requestAnimationFrame(loop);
