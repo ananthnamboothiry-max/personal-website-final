@@ -10,13 +10,13 @@
       "game": "Home Game",
       "venue": "Crothers Hall",
       "buy_in": 30,
-      "cash_out": 9.80
+      "cash_out": 9.8
     },
     {
       "game": "Home Game",
       "venue": "Crothers Hall",
       "buy_in": 30,
-      "cash_out": 80.50
+      "cash_out": 80.5
     },
     {
       "game": "Home Tournament",
@@ -35,6 +35,18 @@
       "venue": "YC HQ",
       "buy_in": 50,
       "cash_out": 738
+    },
+    {
+      "game": "Home Game",
+      "venue": "Portland Home",
+      "buy_in": 20,
+      "cash_out": 0
+    },
+    {
+      "game": "Home Game",
+      "venue": "Portland Home",
+      "buy_in": 60,
+      "cash_out": 0
     }
   ]
 }
